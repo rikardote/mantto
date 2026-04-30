@@ -77,29 +77,30 @@ new class extends Component {
         @endif
     </div>
 
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto -mx-4 sm:mx-0">
         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <thead class="text-[10px] text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                 <tr>
-                    <th class="px-6 py-3">Folio / Título</th>
-                    <th class="px-6 py-3">Unidad</th>
-                    <th class="px-6 py-3">Servicio</th>
-                    <th class="px-6 py-3">Prioridad</th>
-                    <th class="px-6 py-3">Estatus</th>
-                    <th class="px-6 py-3">Fecha</th>
-                    <th class="px-6 py-3"></th>
+                    <th class="px-3 py-3">Folio / Título</th>
+                    <th class="hidden md:table-cell px-6 py-3">Unidad</th>
+                    <th class="hidden sm:table-cell px-6 py-3">Servicio</th>
+                    <th class="hidden lg:table-cell px-6 py-3">Prioridad</th>
+                    <th class="px-3 py-3">Estatus</th>
+                    <th class="hidden md:table-cell px-6 py-3">Fecha</th>
+                    <th class="px-3 py-3 text-right"></th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($solicitudes as $s)
-                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                            <div class="text-xs text-gray-400">{{ $s->folio_oficio ?? 'Sin folio' }}</div>
-                            <div>{{ $s->titulo }}</div>
+                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition">
+                        <td class="px-3 py-4 font-medium text-gray-900 dark:text-white">
+                            <div class="text-[10px] text-gray-400 uppercase font-bold">{{ $s->folio_oficio ?? 'ID: '.$s->id }}</div>
+                            <div class="max-w-[120px] md:max-w-none truncate text-sm">{{ $s->titulo }}</div>
+                            <div class="md:hidden text-[10px] text-gray-500 mt-1">{{ $s->unidad->nombre }}</div>
                         </td>
-                        <td class="px-6 py-4">{{ $s->unidad->nombre }}</td>
-                        <td class="px-6 py-4">{{ $s->servicio->nombre }}</td>
-                        <td class="px-6 py-4">
+                        <td class="hidden md:table-cell px-6 py-4">{{ $s->unidad->nombre }}</td>
+                        <td class="hidden sm:table-cell px-6 py-4">{{ $s->servicio->nombre }}</td>
+                        <td class="hidden lg:table-cell px-6 py-4">
                             @php
                                 $priorityColor = match($s->prioridad->nombre) {
                                     'Alta' => 'text-red-600 bg-red-100',
@@ -108,11 +109,11 @@ new class extends Component {
                                     default => 'text-gray-600 bg-gray-100',
                                 };
                             @endphp
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium {{ $priorityColor }}">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $priorityColor }}">
                                 {{ $s->prioridad->nombre }}
                             </span>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-3 py-4">
                             @php
                                 $statusColor = match($s->estatus) {
                                     'abierto' => 'bg-green-100 text-green-800',
@@ -123,15 +124,17 @@ new class extends Component {
                                     default => 'bg-gray-100 text-gray-800',
                                 };
                             @endphp
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
-                                {{ ucfirst($s->estatus) }}
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase {{ $statusColor }}">
+                                {{ $s->estatus }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-xs">
+                        <td class="hidden md:table-cell px-6 py-4 text-xs">
                             {{ $s->fecha_solicitud->format('d/m/Y H:i') }}
                         </td>
-                        <td class="px-6 py-4 text-right">
-                            <a href="{{ route('solicitudes.show', $s) }}" class="font-medium text-indigo-600 dark:text-indigo-500 hover:underline">Ver</a>
+                        <td class="px-3 py-4 text-right">
+                            <a href="{{ route('solicitudes.show', $s) }}" class="inline-flex items-center px-3 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-bold hover:bg-indigo-100 transition">
+                                Ver
+                            </a>
                         </td>
                     </tr>
                 @empty

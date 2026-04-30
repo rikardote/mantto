@@ -5,6 +5,8 @@ use App\Models\SolicitudMantenimiento;
 use App\Models\Servicio;
 use App\Models\TipoMantenimiento;
 use App\Models\Prioridad;
+use App\Models\User;
+use App\Notifications\SolicitudActualizada;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithFileUploads;
 
@@ -59,7 +61,7 @@ new class extends Component {
             $path = $this->archivo_oficio->store('oficios', 'public');
         }
 
-        SolicitudMantenimiento::create([
+        $solicitud = SolicitudMantenimiento::create([
             'unidad_id' => $this->unidad_id ?: Auth::user()->unidad_id,
             'servicio_id' => $this->servicio_id,
             'tipo_mantenimiento_id' => $this->tipo_mantenimiento_id,
@@ -74,6 +76,14 @@ new class extends Component {
             'fecha_limite' => $fecha_limite,
             'creado_por' => Auth::id(),
         ]);
+
+        // Notificar a los usuarios de la Unidad destino
+        $usuariosUnidad = User::where('unidad_id', $solicitud->unidad_id)->get();
+        foreach ($usuariosUnidad as $user) {
+            if ($user->id !== Auth::id()) { // No notificarse a uno mismo
+                $user->notify(new SolicitudActualizada($solicitud, "Se ha registrado una nueva solicitud para tu unidad: " . $solicitud->titulo));
+            }
+        }
 
         return redirect()->route('solicitudes.index')
             ->with('status', 'Solicitud creada con éxito.');

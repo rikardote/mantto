@@ -6,6 +6,17 @@ use Livewire\Volt\Component;
 new class extends Component
 {
     /**
+     * Mark a single notification as read and redirect.
+     */
+    public function readNotification($id): void
+    {
+        $notification = auth()->user()->notifications()->findOrFail($id);
+        $notification->markAsRead();
+        
+        $this->redirect($notification->data['url'], navigate: true);
+    }
+
+    /**
      * Mark all notifications as read.
      */
     public function markAllAsRead(): void
@@ -58,12 +69,12 @@ new class extends Component
             <div class="flex items-center">
                 <!-- Notifications Bell -->
                 <div class="hidden sm:flex sm:items-center sm:ms-3">
-                    <x-dropdown align="right" width="64">
+                    <x-dropdown align="right" width="80">
                         <x-slot name="trigger">
                             <button class="relative inline-flex items-center p-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                                 @if(Auth::user()->unreadNotifications->count() > 0)
-                                    <span class="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-[10px] font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                                    <span class="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-[10px] font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full animate-pulse">
                                         {{ Auth::user()->unreadNotifications->count() }}
                                     </span>
                                 @endif
@@ -71,31 +82,47 @@ new class extends Component
                         </x-slot>
 
                         <x-slot name="content">
-                            <div class="block px-4 py-2 text-xs text-gray-400 border-b dark:border-gray-700">
-                                {{ __('Notificaciones Recientes') }}
-                            </div>
-
-                            <div class="max-h-64 overflow-y-auto">
-                                @forelse(Auth::user()->unreadNotifications->take(5) as $notification)
-                                    <a href="{{ $notification->data['url'] }}" class="block px-4 py-3 border-b dark:border-gray-700 last:border-0 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                                        <p class="text-xs font-bold text-indigo-600">{{ $notification->data['titulo'] }}</p>
-                                        <p class="text-[11px] text-gray-600 dark:text-gray-400 line-clamp-2">{{ $notification->data['mensaje'] }}</p>
-                                        <span class="text-[9px] text-gray-400">{{ $notification->created_at->diffForHumans() }}</span>
-                                    </a>
-                                @empty
-                                    <div class="px-4 py-6 text-sm text-gray-500 text-center italic">
-                                        {{ __('No hay notificaciones nuevas') }}
-                                    </div>
-                                @endforelse
-                            </div>
-
-                            @if(Auth::user()->unreadNotifications->count() > 0)
-                                <div class="border-t border-gray-200 dark:border-gray-600">
-                                    <button wire:click="markAllAsRead" class="block w-full text-center py-2 text-xs text-indigo-600 hover:bg-gray-50 font-bold">
-                                        {{ __('Marcar todas como leídas') }}
-                                    </button>
+                            <div class="w-80 sm:w-96">
+                                <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-b dark:border-gray-700 flex justify-between items-center">
+                                    <h3 class="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">{{ __('Centro de Notificaciones') }}</h3>
+                                    <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">
+                                        {{ Auth::user()->unreadNotifications->count() }} nuevas
+                                    </span>
                                 </div>
-                            @endif
+
+                                <div class="max-h-[400px] overflow-y-auto">
+                                    @forelse(Auth::user()->unreadNotifications->take(10) as $notification)
+                                        <button wire:click="readNotification('{{ $notification->id }}')" class="w-full text-left block px-4 py-4 border-b dark:border-gray-700 last:border-0 hover:bg-indigo-50/50 dark:hover:bg-gray-700 transition relative group">
+                                            <div class="flex items-start gap-3">
+                                                <div class="shrink-0 mt-1">
+                                                    <div class="w-2 h-2 bg-indigo-600 rounded-full group-hover:scale-125 transition"></div>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm font-bold text-gray-900 dark:text-white mb-0.5 leading-tight">{{ $notification->data['titulo'] }}</p>
+                                                    <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-1">{{ $notification->data['mensaje'] }}</p>
+                                                    <div class="flex items-center gap-1 text-[10px] text-gray-400 font-medium">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                        {{ $notification->created_at->diffForHumans() }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    @empty
+                                        <div class="px-4 py-12 text-center">
+                                            <svg class="w-12 h-12 mx-auto text-gray-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0l-8 8-8-8"></path></svg>
+                                            <p class="text-sm text-gray-400 italic font-medium">{{ __('Bandeja de entrada limpia') }}</p>
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                @if(Auth::user()->unreadNotifications->count() > 0)
+                                    <div class="p-2 bg-gray-50 dark:bg-gray-700/30 border-t dark:border-gray-700">
+                                        <button wire:click="markAllAsRead" class="w-full py-2 text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:bg-white rounded transition shadow-sm border border-transparent hover:border-indigo-100">
+                                            {{ __('Marcar todas como leídas') }}
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
                         </x-slot>
                     </x-dropdown>
                 </div>
