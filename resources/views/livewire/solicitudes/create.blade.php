@@ -6,8 +6,11 @@ use App\Models\Servicio;
 use App\Models\TipoMantenimiento;
 use App\Models\Prioridad;
 use Illuminate\Support\Facades\Auth;
+use Livewire\WithFileUploads;
 
 new class extends Component {
+    use WithFileUploads;
+
     public $titulo = '';
     public $descripcion = '';
     public $unidad_id = '';
@@ -16,6 +19,7 @@ new class extends Component {
     public $prioridad_id = '';
     public $descripcion_servicio_otro = '';
     public $folio_oficio = '';
+    public $archivo_oficio;
 
     public function mount()
     {
@@ -43,11 +47,17 @@ new class extends Component {
             'tipo_mantenimiento_id' => 'required|exists:tipos_mantenimiento,id',
             'prioridad_id' => 'required|exists:prioridades,id',
             'descripcion_servicio_otro' => 'required_if:servicio_id,' . $this->getOtroServicioId(),
+            'archivo_oficio' => 'nullable|file|max:10240', // 10MB
         ]);
 
         $prioridad = Prioridad::find($this->prioridad_id);
         $fecha_solicitud = now();
         $fecha_limite = $fecha_solicitud->copy()->addHours($prioridad->tiempo_respuesta_horas ?? 48);
+
+        $path = null;
+        if ($this->archivo_oficio) {
+            $path = $this->archivo_oficio->store('oficios', 'public');
+        }
 
         SolicitudMantenimiento::create([
             'unidad_id' => $this->unidad_id ?: Auth::user()->unidad_id,
@@ -58,6 +68,7 @@ new class extends Component {
             'descripcion' => $this->descripcion,
             'descripcion_servicio_otro' => $this->descripcion_servicio_otro,
             'folio_oficio' => $this->folio_oficio,
+            'archivo_oficio_path' => $path,
             'estatus' => 'abierto',
             'fecha_solicitud' => $fecha_solicitud,
             'fecha_limite' => $fecha_limite,
@@ -163,6 +174,14 @@ new class extends Component {
             <x-input-label for="descripcion" :value="__('Descripción detallada del problema')" />
             <textarea wire:model="descripcion" id="descripcion" rows="4" class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" required></textarea>
             <x-input-error :messages="$errors->get('descripcion')" class="mt-2" />
+        </div>
+
+        <!-- Archivo Oficio -->
+        <div class="md:col-span-2">
+            <x-input-label for="archivo_oficio" value="Adjuntar Oficio / Evidencia Inicial (PDF/Foto)" />
+            <input type="file" wire:model="archivo_oficio" id="archivo_oficio" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 mt-1">
+            <div wire:loading wire:target="archivo_oficio" class="text-xs text-indigo-500 italic">Subiendo archivo...</div>
+            <x-input-error :messages="$errors->get('archivo_oficio')" class="mt-2" />
         </div>
     </div>
 

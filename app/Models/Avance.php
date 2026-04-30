@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Avance extends Model
 {
-    protected $fillable = ['solicitud_id', 'user_id', 'comentario', 'porcentaje', 'fecha'];
+    protected $fillable = ['solicitud_id', 'user_id', 'comentario', 'porcentaje', 'fecha', 'archivo_path'];
 
     protected $casts = [
         'fecha' => 'datetime',

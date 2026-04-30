@@ -4,12 +4,17 @@ use Livewire\Volt\Component;
 use App\Models\SolicitudMantenimiento;
 use App\Models\Avance;
 use Illuminate\Support\Facades\Auth;
+use Livewire\WithFileUploads;
+use App\Notifications\SolicitudActualizada;
 
 new class extends Component {
+    use WithFileUploads;
+
     public SolicitudMantenimiento $solicitud;
     public $orden_servicio = '';
     public $comentario_avance = '';
     public $porcentaje_avance = 0;
+    public $archivo_avance;
 
     public function mount(SolicitudMantenimiento $solicitud)
     {
@@ -33,6 +38,11 @@ new class extends Component {
 
         $this->solicitud->update($updateData);
         $this->solicitud->refresh();
+
+        // Notificar al creador
+        if ($this->solicitud->creador) {
+            $this->solicitud->creador->notify(new SolicitudActualizada($this->solicitud, "Tu solicitud ha cambiado a: " . strtoupper($nuevoEstatus)));
+        }
         
         session()->flash('status', "Estatus actualizado a: $nuevoEstatus");
     }
@@ -46,6 +56,10 @@ new class extends Component {
             'orden_servicio' => $this->orden_servicio,
             'estatus' => $this->solicitud->estatus === 'validado' ? 'asignado' : $this->solicitud->estatus
         ]);
+
+        if ($this->solicitud->creador) {
+            $this->solicitud->creador->notify(new SolicitudActualizada($this->solicitud, "Se ha asignado la Orden de Servicio: " . $this->orden_servicio));
+        }
         
         session()->flash('status', 'Orden de servicio guardada.');
     }
@@ -55,7 +69,13 @@ new class extends Component {
         $this->validate([
             'comentario_avance' => 'required|string',
             'porcentaje_avance' => 'required|integer|min:0|max:100',
+            'archivo_avance' => 'nullable|file|max:5120', // 5MB
         ]);
+
+        $path = null;
+        if ($this->archivo_avance) {
+            $path = $this->archivo_avance->store('evidencias', 'public');
+        }
 
         Avance::create([
             'solicitud_id' => $this->solicitud->id,
@@ -63,9 +83,10 @@ new class extends Component {
             'comentario' => $this->comentario_avance,
             'porcentaje' => $this->porcentaje_avance,
             'fecha' => now(),
+            'archivo_path' => $path,
         ]);
 
-        $this->comentario_avance = '';
+        $this->reset(['comentario_avance', 'archivo_avance']);
         $this->solicitud->refresh();
         session()->flash('status', 'Avance registrado.');
     }
@@ -114,6 +135,15 @@ new class extends Component {
                     <span class="text-gray-500">Fecha de Solicitud:</span>
                     <span class="font-medium dark:text-gray-200 block">{{ $solicitud->fecha_solicitud->format('d/m/Y H:i') }}</span>
                 </div>
+                @if($solicitud->archivo_oficio_path)
+                    <div class="col-span-2 mt-2 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded border border-indigo-100 dark:border-indigo-800">
+                        <span class="text-xs text-indigo-600 dark:text-indigo-400 font-bold uppercase block mb-1">Documento Inicial / Oficio</span>
+                        <a href="{{ Storage::url($solicitud->archivo_oficio_path) }}" target="_blank" class="text-sm text-indigo-700 dark:text-indigo-300 hover:underline flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Ver Archivo Adjunto
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -130,6 +160,16 @@ new class extends Component {
                                 <span class="text-xs text-gray-500">{{ $avance->fecha->format('d/m/Y H:i') }}</span>
                             </div>
                             <p class="text-sm dark:text-gray-300">{{ $avance->comentario }}</p>
+                            
+                            @if($avance->archivo_path)
+                                <div class="mt-2">
+                                    <a href="{{ Storage::url($avance->archivo_path) }}" target="_blank" class="text-xs text-indigo-600 hover:underline flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                                        Ver Documento / Foto
+                                    </a>
+                                </div>
+                            @endif
+
                             <div class="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                                 <div class="bg-indigo-600 h-1.5 rounded-full" style="width: {{ $avance->porcentaje }}%"></div>
                             </div>
@@ -145,6 +185,13 @@ new class extends Component {
                     <h5 class="text-sm font-bold mb-3 dark:text-gray-200">Registrar Nuevo Avance</h5>
                     <div class="space-y-3">
                         <textarea wire:model="comentario_avance" class="w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm" placeholder="Comentarios del progreso..."></textarea>
+                        
+                        <div class="flex flex-col gap-2">
+                            <x-input-label for="archivo_avance" value="Adjuntar Evidencia (Foto/PDF)" />
+                            <input type="file" wire:model="archivo_avance" id="archivo_avance" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            <div wire:loading wire:target="archivo_avance" class="text-xs text-indigo-500 italic">Subiendo archivo...</div>
+                        </div>
+
                         <div class="flex items-center gap-4">
                             <div class="flex-1">
                                 <label class="text-xs text-gray-500">Porcentaje de avance: {{ $porcentaje_avance }}%</label>
@@ -193,6 +240,12 @@ new class extends Component {
                 
                 <div class="space-y-4">
                     <div class="flex flex-col gap-3">
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('solicitudes.imprimir', $solicitud) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                Imprimir Ficha
+                            </a>
+                        </div>
                         @if($solicitud->estatus === 'abierto')
                             <x-primary-button wire:click="cambiarEstatus('validado')" class="justify-center w-full bg-yellow-600 hover:bg-yellow-700">1. Validar y Recibir</x-primary-button>
                         @endif

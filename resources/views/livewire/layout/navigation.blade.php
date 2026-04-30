@@ -6,6 +6,14 @@ use Livewire\Volt\Component;
 new class extends Component
 {
     /**
+     * Mark all notifications as read.
+     */
+    public function markAllAsRead(): void
+    {
+        auth()->user()->unreadNotifications->markAsRead();
+    }
+
+    /**
      * Log the current user out of the application.
      */
     public function logout(Logout $logout): void
@@ -47,34 +55,80 @@ new class extends Component
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
-                            <div x-data="{{ json_encode(['name' => auth()->user()->name]) }}" x-text="name" x-on:profile-updated.window="name = $event.detail.name"></div>
+            <div class="flex items-center">
+                <!-- Notifications Bell -->
+                <div class="hidden sm:flex sm:items-center sm:ms-3">
+                    <x-dropdown align="right" width="64">
+                        <x-slot name="trigger">
+                            <button class="relative inline-flex items-center p-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                @if(Auth::user()->unreadNotifications->count() > 0)
+                                    <span class="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-[10px] font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                                        {{ Auth::user()->unreadNotifications->count() }}
+                                    </span>
+                                @endif
+                            </button>
+                        </x-slot>
 
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
+                        <x-slot name="content">
+                            <div class="block px-4 py-2 text-xs text-gray-400 border-b dark:border-gray-700">
+                                {{ __('Notificaciones Recientes') }}
                             </div>
-                        </button>
-                    </x-slot>
 
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile')" wire:navigate>
-                            {{ __('Perfil') }}
-                        </x-dropdown-link>
+                            <div class="max-h-64 overflow-y-auto">
+                                @forelse(Auth::user()->unreadNotifications->take(5) as $notification)
+                                    <a href="{{ $notification->data['url'] }}" class="block px-4 py-3 border-b dark:border-gray-700 last:border-0 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                                        <p class="text-xs font-bold text-indigo-600">{{ $notification->data['titulo'] }}</p>
+                                        <p class="text-[11px] text-gray-600 dark:text-gray-400 line-clamp-2">{{ $notification->data['mensaje'] }}</p>
+                                        <span class="text-[9px] text-gray-400">{{ $notification->created_at->diffForHumans() }}</span>
+                                    </a>
+                                @empty
+                                    <div class="px-4 py-6 text-sm text-gray-500 text-center italic">
+                                        {{ __('No hay notificaciones nuevas') }}
+                                    </div>
+                                @endforelse
+                            </div>
 
-                        <!-- Authentication -->
-                        <button wire:click="logout" class="w-full text-start">
-                            <x-dropdown-link>
-                                {{ __('Cerrar Sesión') }}
+                            @if(Auth::user()->unreadNotifications->count() > 0)
+                                <div class="border-t border-gray-200 dark:border-gray-600">
+                                    <button wire:click="markAllAsRead" class="block w-full text-center py-2 text-xs text-indigo-600 hover:bg-gray-50 font-bold">
+                                        {{ __('Marcar todas como leídas') }}
+                                    </button>
+                                </div>
+                            @endif
+                        </x-slot>
+                    </x-dropdown>
+                </div>
+
+                <!-- Settings Dropdown -->
+                <div class="hidden sm:flex sm:items-center sm:ms-3">
+                    <x-dropdown align="right" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                                <div x-data="{{ json_encode(['name' => auth()->user()->name]) }}" x-text="name" x-on:profile-updated.window="name = $event.detail.name"></div>
+
+                                <div class="ms-1">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('profile')" wire:navigate>
+                                {{ __('Perfil') }}
                             </x-dropdown-link>
-                        </button>
-                    </x-slot>
-                </x-dropdown>
+
+                            <!-- Authentication -->
+                            <button wire:click="logout" class="w-full text-start">
+                                <x-dropdown-link>
+                                    {{ __('Cerrar Sesión') }}
+                                </x-dropdown-link>
+                            </button>
+                        </x-slot>
+                    </x-dropdown>
+                </div>
             </div>
 
             <!-- Hamburger -->

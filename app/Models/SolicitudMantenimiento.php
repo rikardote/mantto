@@ -12,7 +12,7 @@ class SolicitudMantenimiento extends Model
         'titulo', 'descripcion', 'descripcion_servicio_otro',
         'folio_oficio', 'orden_servicio', 'estatus',
         'fecha_solicitud', 'fecha_atencion', 'fecha_cierre', 'fecha_limite',
-        'creado_por'
+        'creado_por', 'archivo_oficio_path'
     ];
 
     public function casts(): array
