@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ request()->cookie('theme', 'light') === 'dark' ? 'dark' : '' }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,10 +16,26 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             (function() {
-                const theme = '{{ request()->cookie("theme", "light") }}';
-                if (theme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                }
+                const applyTheme = () => {
+                    const theme = '{{ request()->cookie("theme", "light") }}';
+                    if (theme === 'dark') {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                };
+
+                applyTheme();
+
+                document.addEventListener('livewire:navigated', applyTheme);
+                
+                document.addEventListener('theme-changed', (event) => {
+                    if (event.detail.isDark) {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                });
             })();
         </script>
     </head>

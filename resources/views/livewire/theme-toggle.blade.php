@@ -13,23 +13,3 @@
         </svg>
     @endif
 </button>
-
-<script>
-    document.addEventListener('theme-changed', (event) => {
-        if (event.detail.isDark) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    });
-    
-    // Apply theme on page load
-    (function() {
-        const theme = @json($isDark ? 'dark' : 'light');
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    })();
-</script>
