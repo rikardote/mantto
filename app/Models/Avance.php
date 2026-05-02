@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Avance extends Model
 {
+    use HasFactory;
     protected $fillable = ['solicitud_id', 'user_id', 'comentario', 'porcentaje', 'fecha', 'archivo_path'];
 
     protected $casts = [

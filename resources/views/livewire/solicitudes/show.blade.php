@@ -181,7 +181,7 @@ new class extends Component {
                         <div class="flex-1">
                             <div class="flex justify-between items-center mb-1">
                                 <span class="font-bold text-sm dark:text-indigo-400">{{ $avance->user->name }}</span>
-                                <span class="text-xs text-gray-500">{{ $avance->fecha->format('d/m/Y H:i') }}</span>
+                                <span class="text-xs text-gray-500">{{ $avance->fecha?->format('d/m/Y H:i') ?? 'N/A' }}</span>
                             </div>
                             <p class="text-sm dark:text-gray-300">{{ $avance->comentario }}</p>
                             
@@ -248,8 +248,8 @@ new class extends Component {
                 </div>
                 <div>
                     <span class="text-xs text-gray-500 block uppercase tracking-wider">Fecha Límite</span>
-                    <span class="font-medium dark:text-gray-200">{{ $solicitud->fecha_limite->format('d/m/Y H:i') }}</span>
-                    @if($solicitud->fecha_limite->isPast() && $solicitud->estatus !== 'terminado')
+                    <span class="font-medium dark:text-gray-200">{{ $solicitud->fecha_limite?->format('d/m/Y H:i') ?? 'N/A' }}</span>
+                    @if($solicitud->fecha_limite?->isPast() && $solicitud->estatus !== 'terminado')
                         <span class="block text-xs text-red-500 font-bold uppercase mt-1">¡VENCIDA!</span>
                     @endif
                 </div>
